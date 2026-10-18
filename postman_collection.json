@@ -1,0 +1,678 @@
+{
+  "info": {
+    "_postman_id": "a9b8c7d6-e5f4-4321-abcd-1234567890ab",
+    "name": "Sistema de Reservas y Turnos API",
+    "description": "Colección completa de pruebas para la API REST del Sistema de Reservas de Citas y Turnos con validación de solapamientos, operaciones CRUD completas (GET, POST, PUT, PATCH, DELETE), cancelación y liberación de horarios.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "clienteId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "proveedorId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "reservaId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "fechaReserva",
+      "value": "2026-11-10",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "01. Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["health"]
+        },
+        "description": "Comprueba que la API se encuentre en ejecución y responda adecuadamente."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code es 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Servicio en estado ok', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.status).to.eql('ok');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "02. Clientes - Crear nuevo cliente (POST)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Valentina Mendoza\",\n  \"email\": \"valentina.mendoza@email.com\",\n  \"telefono\": \"+573151234567\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/clientes",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "clientes"]
+        },
+        "description": "Registra un nuevo cliente y guarda dinámicamente su identificador en la variable clienteId."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code es 201 Created o 409 si ya existe', function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([201, 409]);",
+              "});",
+              "if (pm.response.code === 201) {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('id');",
+              "    pm.collectionVariables.set('clienteId', jsonData.id);",
+              "    console.log('Cliente ID guardado:', jsonData.id);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "03. Clientes - Listar clientes (GET)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/clientes",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "clientes"]
+        },
+        "description": "Obtiene la lista completa de clientes registrados."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code es 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Retorna un arreglo de clientes', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.be.an('array');",
+              "    pm.expect(jsonData.length).to.be.above(0);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "04. Clientes - Obtener cliente por ID (GET)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/clientes/{{clienteId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "clientes", "{{clienteId}}"]
+        },
+        "description": "Consulta un cliente por su ID."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code es 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Estructura correcta del cliente', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('id');",
+              "    pm.expect(jsonData).to.have.property('nombre');",
+              "    pm.expect(jsonData).to.have.property('email');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "05. Clientes - Actualizar datos del cliente (PUT)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Valentina Mendoza Actualizada\",\n  \"email\": \"valentina.actualizada@email.com\",\n  \"telefono\": \"+573159998877\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/clientes/{{clienteId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "clientes", "{{clienteId}}"]
+        },
+        "description": "Actualiza la información completa de un cliente existente mediante PUT."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code es 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var jsonData = pm.response.json();",
+              "pm.test('Datos del cliente actualizados correctamente', function () {",
+              "    pm.expect(jsonData.nombre).to.eql('Valentina Mendoza Actualizada');",
+              "    pm.expect(jsonData.email).to.eql('valentina.actualizada@email.com');",
+              "    pm.expect(jsonData.telefono).to.eql('+573159998877');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "06. Proveedores - Listar proveedores activos (GET)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/proveedores",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "proveedores"]
+        },
+        "description": "Lista los proveedores activos y guarda el ID del primer proveedor para las siguientes solicitudes."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code es 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var jsonData = pm.response.json();",
+              "pm.test('Retorna arreglo con proveedores', function () {",
+              "    pm.expect(jsonData).to.be.an('array');",
+              "    pm.expect(jsonData.length).to.be.above(0);",
+              "});",
+              "if (jsonData.length > 0) {",
+              "    pm.collectionVariables.set('proveedorId', jsonData[0].id);",
+              "    console.log('Proveedor ID guardado:', jsonData[0].id);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "07. Proveedores - Obtener proveedor por ID (GET)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/proveedores/{{proveedorId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "proveedores", "{{proveedorId}}"]
+        },
+        "description": "Consulta los detalles y configuración horaria de un proveedor."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code es 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('El proveedor contiene campos de atención', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('duracionMinutos');",
+              "    pm.expect(jsonData).to.have.property('horaApertura');",
+              "    pm.expect(jsonData).to.have.property('horaCierre');",
+              "    pm.expect(jsonData).to.have.property('diasAtencion');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "08. Proveedores - Consultar disponibilidad horaria (GET)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/proveedores/{{proveedorId}}/disponibilidad?fecha={{fechaReserva}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "proveedores", "{{proveedorId}}", "disponibilidad"],
+          "query": [
+            {
+              "key": "fecha",
+              "value": "{{fechaReserva}}"
+            }
+          ]
+        },
+        "description": "Calcula los turnos libres del proveedor para la fecha especificada."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code es 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Respuesta estructurada de disponibilidad', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('fecha');",
+              "    pm.expect(jsonData).to.have.property('zonaHoraria');",
+              "    pm.expect(jsonData).to.have.property('intervalosDisponibles');",
+              "    pm.expect(jsonData.intervalosDisponibles).to.be.an('array');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "09. Reservas - Crear reserva confirmada válida (POST)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"clienteId\": {{clienteId}},\n  \"proveedorId\": {{proveedorId}},\n  \"fechaHoraInicio\": \"2026-11-10T10:00:00-05:00\",\n  \"duracionMinutos\": 30\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/reservas",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "reservas"]
+        },
+        "description": "Crea una reserva válida [10:00, 10:30) y guarda el reservaId en las variables."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code es 201 Created', function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "var jsonData = pm.response.json();",
+              "pm.test('Reserva creada con estado confirmada', function () {",
+              "    pm.expect(jsonData.estado).to.eql('confirmada');",
+              "    pm.expect(jsonData).to.have.property('fechaHoraFin');",
+              "});",
+              "pm.collectionVariables.set('reservaId', jsonData.id);",
+              "console.log('Reserva ID guardada:', jsonData.id);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "10. Reservas - Intento de reserva solapada (POST - Debe dar 409)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"clienteId\": {{clienteId}},\n  \"proveedorId\": {{proveedorId}},\n  \"fechaHoraInicio\": \"2026-11-10T10:15:00-05:00\",\n  \"duracionMinutos\": 30\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/reservas",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "reservas"]
+        },
+        "description": "Intenta reservar en [10:15, 10:45), el cual se solapa con [10:00, 10:30). Debe responder exactamente con HTTP 409 y el JSON estipulado."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code es estrictamente 409 Conflict', function () {",
+              "    pm.response.to.have.status(409);",
+              "});",
+              "pm.test('Cuerpo JSON exacto según especificación', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.deep.equal({",
+              "        error: 'Conflicto de horario',",
+              "        detalle: 'El proveedor ya tiene una reserva en el intervalo solicitado.'",
+              "    });",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "11. Reservas - Reserva consecutiva adyacente (POST)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"clienteId\": {{clienteId}},\n  \"proveedorId\": {{proveedorId}},\n  \"fechaHoraInicio\": \"2026-11-10T10:30:00-05:00\",\n  \"duracionMinutos\": 30\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/reservas",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "reservas"]
+        },
+        "description": "Comienza exactamente a las 10:30 cuando termina la reserva anterior. Debe ser permitida."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code es 201 Created', function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "var jsonData = pm.response.json();",
+              "pm.test('Reserva consecutiva confirmada exitosamente', function () {",
+              "    pm.expect(jsonData.estado).to.eql('confirmada');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "12. Reservas - Listar con filtros (GET)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/reservas?proveedorId={{proveedorId}}&estado=confirmada",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "reservas"],
+          "query": [
+            {
+              "key": "proveedorId",
+              "value": "{{proveedorId}}"
+            },
+            {
+              "key": "estado",
+              "value": "confirmada"
+            }
+          ]
+        },
+        "description": "Filtra reservas por proveedor y estado."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code es 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var jsonData = pm.response.json();",
+              "pm.test('Todas las reservas cumplen los filtros', function () {",
+              "    pm.expect(jsonData).to.be.an('array');",
+              "    jsonData.forEach(function(r) {",
+              "        pm.expect(r.estado).to.eql('confirmada');",
+              "    });",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "13. Reservas - Obtener reserva por ID (GET)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/reservas/{{reservaId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "reservas", "{{reservaId}}"]
+        },
+        "description": "Consulta los detalles de la reserva creada en el paso 09."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code es 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var jsonData = pm.response.json();",
+              "pm.test('Detalle de reserva correcto', function () {",
+              "    pm.expect(jsonData.id.toString()).to.eql(pm.collectionVariables.get('reservaId').toString());",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "14. Reservas - Cancelar reserva (PATCH)",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/reservas/{{reservaId}}/cancelar",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "reservas", "{{reservaId}}", "cancelar"]
+        },
+        "description": "Cancela la reserva. Su estado cambia a 'cancelada' y su horario queda liberado."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code es 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var jsonData = pm.response.json();",
+              "pm.test('Estado de reserva actualizado a cancelada', function () {",
+              "    pm.expect(jsonData.estado).to.eql('cancelada');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "15. Reservas - Reintento de cancelación (PATCH - Debe dar 409)",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/reservas/{{reservaId}}/cancelar",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "reservas", "{{reservaId}}", "cancelar"]
+        },
+        "description": "Intenta cancelar nuevamente la misma reserva. Debe responder con HTTP 409 Conflicto."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code es 409 Conflict', function () {",
+              "    pm.response.to.have.status(409);",
+              "});",
+              "var jsonData = pm.response.json();",
+              "pm.test('Error de conflicto de estado reportado', function () {",
+              "    pm.expect(jsonData.error).to.eql('Conflicto de estado');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "16. Reservas - Reservar nuevamente en el horario liberado (POST)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"clienteId\": {{clienteId}},\n  \"proveedorId\": {{proveedorId}},\n  \"fechaHoraInicio\": \"2026-11-10T10:00:00-05:00\",\n  \"duracionMinutos\": 30\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/reservas",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "reservas"]
+        },
+        "description": "Demuestra que la reserva cancelada liberó efectivamente el horario para una nueva reserva confirmada."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code es 201 Created', function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "var jsonData = pm.response.json();",
+              "pm.test('Nueva reserva confirmada en horario liberado', function () {",
+              "    pm.expect(jsonData.estado).to.eql('confirmada');",
+              "    pm.expect(jsonData.id.toString()).to.not.eql(pm.collectionVariables.get('reservaId').toString());",
+              "});",
+              "pm.collectionVariables.set('reservaId', jsonData.id);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "17. Reservas - Eliminar reserva físicamente (DELETE)",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/reservas/{{reservaId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "reservas", "{{reservaId}}"]
+        },
+        "description": "Elimina permanentemente una reserva de la base de datos mediante el método HTTP DELETE."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code es 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var jsonData = pm.response.json();",
+              "pm.test('Confirmación de reserva eliminada', function () {",
+              "    pm.expect(jsonData.mensaje).to.eql('Reserva eliminada exitosamente.');",
+              "    pm.expect(jsonData.id.toString()).to.eql(pm.collectionVariables.get('reservaId').toString());",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "18. Clientes - Eliminar cliente (DELETE)",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/clientes/{{clienteId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "clientes", "{{clienteId}}"]
+        },
+        "description": "Elimina un cliente de la base de datos mediante el método HTTP DELETE."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code es 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var jsonData = pm.response.json();",
+              "pm.test('Confirmación de cliente eliminado', function () {",
+              "    pm.expect(jsonData.mensaje).to.eql('Cliente eliminado exitosamente.');",
+              "    pm.expect(jsonData.id.toString()).to.eql(pm.collectionVariables.get('clienteId').toString());",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ]
+}
